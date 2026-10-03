@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { User, Building2, Lock, Save } from 'lucide-react'
+import { User, Building2, Save } from 'lucide-react'
 import { Header } from '../components/layout/AppLayout'
 import { Logo } from '../components/common/Logo'
 import { Card, CardTitle } from '../components/ui/Card'
@@ -8,12 +8,12 @@ import { Input } from '../components/ui/Input'
 import { useAuth } from '../context/AuthContext'
 
 export function SettingsPage() {
-  const { profile, updateProfile, changePassword, logout } = useAuth()
+  const { profile, updateProfile, logout } = useAuth()
   const [form, setForm] = useState(profile)
   const [saved, setSaved] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [passwordMessage, setPasswordMessage] = useState('')
+  // const [currentPassword, setCurrentPassword] = useState('')
+  // const [newPassword, setNewPassword] = useState('')
+  // const [passwordMessage, setPasswordMessage] = useState('')
 
   useEffect(() => {
     setForm(profile)
@@ -26,6 +26,8 @@ export function SettingsPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  // Password change handler - commented out
+  /*
   const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordMessage('')
@@ -38,6 +40,7 @@ export function SettingsPage() {
       setPasswordMessage(error instanceof Error ? error.message : 'Could not update password')
     }
   }
+  */
 
   return (
     <div>
@@ -73,6 +76,8 @@ export function SettingsPage() {
         </Button>
       </form>
 
+      {/* Security Section - Commented out for now */}
+      {/*
       <form onSubmit={handlePassword} className="px-4 lg:px-6 pb-4 space-y-4 max-w-2xl">
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -86,7 +91,10 @@ export function SettingsPage() {
             <Button type="submit" variant="outline" fullWidth>Update Password</Button>
           </div>
         </Card>
+      </form>
+      */}
 
+      <div className="px-4 lg:px-6 pb-4 space-y-4 max-w-2xl">
         <Button type="button" variant="danger" fullWidth onClick={logout}>
           Logout
         </Button>
@@ -96,7 +104,7 @@ export function SettingsPage() {
           <p className="text-xs text-slate-400">VEEW OS v1.0 · Meter Installation Module</p>
           <p className="text-xs text-slate-400">Vinayaka Electricals & Engineering Works, Chitradurga</p>
         </div>
-      </form>
+      </div>
     </div>
   )
 }

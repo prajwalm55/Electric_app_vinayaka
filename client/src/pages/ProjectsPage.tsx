@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { FolderKanban, Search, MapPin, Camera, FileText, CreditCard, Plus, Phone, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import { FolderKanban, Search, MapPin, Camera, FileText, CreditCard, Plus, Phone, ChevronDown, ChevronUp, Pencil, FileDown } from 'lucide-react'
 import { Header } from '../components/layout/AppLayout'
 import { Card, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -12,6 +12,7 @@ import { WorkflowStepper } from '../components/common/WorkflowStepper'
 import { ActivityTimeline } from '../components/common/ActivityTimeline'
 import { PaymentTypeBreakdown, PaymentBalanceSummary } from '../components/common/PaymentTracker'
 import { useData } from '../context/DataContext'
+import { api } from '../api/client'
 import { formatCurrency, formatDate } from '../utils/formatters'
 import { getProjectPaymentBalance } from '../utils/payments'
 import type { ConnectionEntry, DocumentCategory, ProjectStatus, SiteClassification, WorkflowStage, StageStatus, PaymentCategory, PaymentMode } from '../types'
@@ -112,6 +113,8 @@ export function ProjectDetailPage() {
   const [totalAmountInput, setTotalAmountInput] = useState('')
   const [amountError, setAmountError] = useState('')
   const [savingAmount, setSavingAmount] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState('')
   const [paymentForm, setPaymentForm] = useState({
     type: 'Customer Advance' as PaymentCategory,
     amount: '',
@@ -227,6 +230,18 @@ export function ProjectDetailPage() {
     }
   }
 
+  const handleGenerateDocument = async () => {
+    setGenerating(true)
+    setGenerateError('')
+    try {
+      await api.download(`/customers/${project.customerId}/lighting-form`, `lighting-form-${project.customerId}.pdf`)
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Failed to generate document')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   return (
     <div>
       <Header title={customer?.name || project.id} subtitle={`${project.currentStage} · ${project.id}`} backTo="/projects" />
@@ -257,6 +272,14 @@ export function ProjectDetailPage() {
           >
             <Phone className="w-4 h-4" /> Call {customer.mobile}
           </a>
+        )}
+
+        <Button onClick={handleGenerateDocument} fullWidth variant="outline" disabled={generating}>
+          <FileDown className="w-4 h-4" />
+          {generating ? 'Generating document...' : 'Generate document'}
+        </Button>
+        {generateError && (
+          <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">{generateError}</div>
         )}
 
         <Card padding="sm">

@@ -37,7 +37,28 @@ export function hasKannada(text: string) {
   return KANNADA_RE.test(text)
 }
 
+// The PDF renderer's font-shaping engine (pdf-lib's embedded fontkit) mis-shapes certain
+// Kannada conjunct clusters — confirmed across multiple font files, so it's a shaping-engine
+// limitation, not a bad font — producing overlapping/garbled glyphs (e.g. ಲಕ್ಷ್ಮಿ "Lakshmi").
+// Inserting a zero-width non-joiner after the conjunct-forming virama stops the broken
+// ligature substitution from firing; the consonants then render as separate (less
+// ornate, but correct and legible) glyphs instead of overlapping. Only clusters confirmed
+// broken are listed here — unlisted conjuncts (e.g. ತ್ರ) already render correctly as proper
+// ligatures and should be left alone.
+const BROKEN_CONJUNCTS: Array<[RegExp, string]> = [
+  [/ಕ್ಷ/g, 'ಕ್‌ಷ'],
+  [/ಷ್ಮ/g, 'ಷ್‌ಮ'],
+]
+
+function fixBrokenConjuncts(text: string): string {
+  return BROKEN_CONJUNCTS.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), text)
+}
+
 export async function toKannada(text: string): Promise<string> {
+  return fixBrokenConjuncts(await toKannadaRaw(text))
+}
+
+async function toKannadaRaw(text: string): Promise<string> {
   const trimmed = text.trim()
   if (!trimmed) return ''
   if (hasKannada(trimmed) && !/[A-Za-z]/.test(trimmed)) return trimmed

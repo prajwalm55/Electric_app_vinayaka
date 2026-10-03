@@ -73,17 +73,17 @@ async function buildFormValues(
   project: Project | undefined,
   connection: ConnectionEntry | undefined,
 ) {
-  const [nameKn, fatherKn, villageKn, panchayatKn, talukKn, districtKn, purposeKn] = await Promise.all([
+  const [nameKn, fatherKn, villageKn, talukKn, districtKn] = await Promise.all([
     toKannada(customer.name),
     toKannada(customer.fatherSpouseName),
     toKannada(customer.village),
-    toKannada(customer.panchayat),
     toKannada(customer.taluk),
     toKannada(customer.district),
-    toKannada('new electricity connection'),
   ])
 
-  const addressKn = [villageKn, panchayatKn, talukKn, districtKn].filter(Boolean).join(', ')
+  // "<village> (ಗ್ರಾಮ), <taluk> (ತಾ), <district>" — the standard rural-address phrasing
+  // used throughout this form (estimate header, field report, Form-1 site address).
+  const siteAddressKn = `${villageKn} (ಗ್ರಾಮ), ${talukKn} (ತಾ), ${districtKn}`
   const phase = connection?.phase === 'Three' ? 'three' : 'single'
   const phaseKn = phase === 'three' ? '3 ಫೇಸ್' : '1 ಫೇಸ್'
   const load = connection?.requiredLoad || ''
@@ -93,11 +93,9 @@ async function buildFormValues(
     nameKn,
     fatherKn,
     villageKn,
-    panchayatKn,
     talukKn,
     districtKn,
-    addressKn,
-    purposeKn,
+    siteAddressKn,
     phaseKn,
     load,
     date,
@@ -115,67 +113,70 @@ type FormValues = Awaited<ReturnType<typeof buildFormValues>>
 function buildOverlays(v: FormValues): Overlay[] {
   return [
     // Page 1 — estimate / bill header
-    { page: 0, x: 42, yFromTop: 86, text: 'ಬೆಂಗಳೂರು', size: 11, maxWidth: 120 },
-    { page: 0, x: 128, yFromTop: 106, text: v.nameKn, size: 11, maxWidth: 250 },
-    { page: 0, x: 48, yFromTop: 125, text: v.purposeKn, size: 10, maxWidth: 280 },
-    { page: 0, x: 88, yFromTop: 147, text: v.customerId, size: 9, maxWidth: 180 },
-    { page: 0, x: 78, yFromTop: 164, text: v.phaseKn, size: 10, maxWidth: 140 },
-    { page: 0, x: 368, yFromTop: 164, text: v.date, size: 9, maxWidth: 80 },
+    { page: 0, x: 72, yFromTop: 48, text: 'ಬೆಂಗಳೂರು', size: 11, maxWidth: 120 },
+    { page: 0, x: 150, yFromTop: 85, text: `${v.nameKn} S/o ${v.fatherKn}`, size: 10, maxWidth: 350 },
+    { page: 0, x: 42, yFromTop: 107, text: v.siteAddressKn, size: 9, maxWidth: 390 },
 
     // Page 3 — field report
-    { page: 2, x: 130, yFromTop: 108, text: v.nameKn, size: 11, maxWidth: 220 },
-    { page: 2, x: 340, yFromTop: 128, text: v.date, size: 9, maxWidth: 90 },
-    { page: 2, x: 210, yFromTop: 148, text: v.addressKn, size: 9, maxWidth: 220 },
-    { page: 2, x: 48, yFromTop: 166, text: `${v.villageKn} - ${v.pin}`, size: 9, maxWidth: 380 },
-    ...(v.rrNumber ? [{ page: 2, x: 220, yFromTop: 188, text: v.rrNumber, size: 9, maxWidth: 120 }] : []),
+    { page: 2, x: 180, yFromTop: 112, text: v.nameKn, size: 11, maxWidth: 220 },
+    { page: 2, x: 245, yFromTop: 146, text: `S/o ${v.fatherKn},`, size: 9, maxWidth: 110 },
+    { page: 2, x: 104, yFromTop: 163, text: `${v.siteAddressKn}.`, size: 9, maxWidth: 400 },
+    ...(v.rrNumber ? [{ page: 2, x: 220, yFromTop: 198, text: v.rrNumber, size: 9, maxWidth: 120 }] : []),
 
-    // Page 5 — applicant name in the covering letter
-    { page: 4, x: 200, yFromTop: 182, text: v.nameKn, size: 11, maxWidth: 220 },
+    // Page 5 — wiring contractor completion report
+    { page: 4, x: 382, yFromTop: 85, text: v.villageKn, size: 9, maxWidth: 75 },
+    { page: 4, x: 320, yFromTop: 301, text: `${v.nameKn} S/o`, size: 10, maxWidth: 215 },
+    { page: 4, x: 100, yFromTop: 315, text: v.fatherKn, size: 10, maxWidth: 360 },
+    { page: 4, x: 40, yFromTop: 329, text: v.siteAddressKn, size: 9, maxWidth: 420 },
+    // Page 5 — applicant declaration block (ವಿಳಾಸ, bottom-left) — ಪ್ರತಿನಿಧಿಯ ಸಹಿ stays blank
+    { page: 4, x: 50, yFromTop: 735, text: `S/o ${v.fatherKn}, ${v.siteAddressKn}`, size: 8, maxWidth: 125 },
 
     // Page 7 — sketch sheet
-    { page: 6, x: 78, yFromTop: 78, text: v.nameKn, size: 12, maxWidth: 340 },
-    { page: 6, x: 78, yFromTop: 102, text: v.villageKn, size: 11, maxWidth: 220 },
-    { page: 6, x: 330, yFromTop: 102, text: v.talukKn, size: 11, maxWidth: 110 },
+    { page: 6, x: 65, yFromTop: 83, text: v.nameKn, size: 12, maxWidth: 340 },
+    { page: 6, x: 62, yFromTop: 109, text: v.villageKn, size: 11, maxWidth: 220 },
+    { page: 6, x: 332, yFromTop: 109, text: v.talukKn, size: 11, maxWidth: 110 },
 
     // Page 8 — Form-1 applicant details
-    { page: 7, x: 92, yFromTop: 312, text: v.nameKn, size: 11, maxWidth: 340 },
-    { page: 7, x: 172, yFromTop: 328, text: v.fatherKn, size: 11, maxWidth: 260 },
-    { page: 7, x: 155, yFromTop: 496, text: v.villageKn, size: 10, maxWidth: 140 },
-    { page: 7, x: 285, yFromTop: 513, text: v.districtKn, size: 10, maxWidth: 140 },
-    { page: 7, x: 92, yFromTop: 530, text: v.pin, size: 10, maxWidth: 70 },
-    { page: 7, x: 330, yFromTop: 530, text: v.mobile, size: 10, maxWidth: 110 },
-    { page: 7, x: 168, yFromTop: 547, text: v.panchayatKn, size: 10, maxWidth: 250 },
-    { page: 7, x: 348, yFromTop: 748, text: v.load, size: 10, maxWidth: 90 },
+    { page: 7, x: 100, yFromTop: 311, text: v.nameKn, size: 11, maxWidth: 340 },
+    { page: 7, x: 200, yFromTop: 326, text: v.fatherKn, size: 11, maxWidth: 240 },
+    { page: 7, x: 305, yFromTop: 438, text: v.siteAddressKn, size: 9, maxWidth: 150 },
+    { page: 7, x: 200, yFromTop: 490, text: v.villageKn, size: 8, maxWidth: 72 },
+    { page: 7, x: 375, yFromTop: 510, text: v.talukKn, size: 9, maxWidth: 80 },
+    { page: 7, x: 75, yFromTop: 528, text: v.pin, size: 10, maxWidth: 85 },
+    { page: 7, x: 390, yFromTop: 528, text: v.mobile, size: 10, maxWidth: 90 },
+    { page: 7, x: 400, yFromTop: 733, text: v.load, size: 10, maxWidth: 80 },
 
     // Page 9 — Form-1 continued + declaration
     ...(v.rrNumber ? [{ page: 8, x: 160, yFromTop: 118, text: v.rrNumber, size: 10, maxWidth: 140 }] : []),
-    { page: 8, x: 198, yFromTop: 682, text: v.nameKn, size: 11, maxWidth: 200 },
-    { page: 8, x: 198, yFromTop: 742, text: v.date, size: 9, maxWidth: 90 },
-    { page: 8, x: 92, yFromTop: 758, text: v.villageKn, size: 10, maxWidth: 140 },
+    { page: 8, x: 220, yFromTop: 686, text: `${v.nameKn} S/o ${v.fatherKn}`, size: 10, maxWidth: 330 },
+    { page: 8, x: 115, yFromTop: 720, text: v.date, size: 9, maxWidth: 90 },
+    { page: 8, x: 180, yFromTop: 744, text: v.villageKn, size: 10, maxWidth: 150 },
   ]
 }
 
 function drawTicks(pages: PDFPage[], v: FormValues) {
-  // Page 9: required phase
+  // Page 9: required phase (ಒಂದು ಫೇಸು / ಮೂರು ಫೇಸು)
   if (v.phase === 'three') {
-    drawTick(pages[8], 378, 58)
+    drawTick(pages[8], 390, 60)
   } else {
-    drawTick(pages[8], 292, 58)
+    drawTick(pages[8], 297, 60)
   }
-  // Page 9: new service
-  drawTick(pages[8], 118, 84)
-  // Page 9: usage category
-  if (v.propertyType === 'Commercial') drawTick(pages[8], 178, 176)
-  else if (v.propertyType === 'Industrial') drawTick(pages[8], 328, 176)
-  else if (v.propertyType === 'Agricultural') drawTick(pages[8], 178, 192)
-  else drawTick(pages[8], 42, 176)
-  // Page 8: regular application
-  drawTick(pages[7], 120, 248)
-  // Page 8: LT category
-  if (v.propertyType === 'Commercial') drawTick(pages[7], 48, 190)
-  else if (v.propertyType === 'Industrial') drawTick(pages[7], 48, 218)
-  else if (v.propertyType === 'Agricultural') drawTick(pages[7], 200, 190)
-  else drawTick(pages[7], 118, 168)
+  // Page 9: new service (ಹೊಸ ಸೇವೆಗಾಗಿ)
+  drawTick(pages[8], 118, 80)
+  // Page 9: usage category table (ಗೃಹಬಳಕೆ / ವಾಣಿಜ್ಯ / ಕೈಗಾರಿಕೆ / ಕೃಷಿ ನೀ.ಪಂ.ಸೆಟ್ಟು)
+  if (v.propertyType === 'Commercial') drawTick(pages[8], 172, 185)
+  else if (v.propertyType === 'Industrial') drawTick(pages[8], 317, 185)
+  else if (v.propertyType === 'Agricultural') drawTick(pages[8], 172, 200)
+  else drawTick(pages[8], 39, 185)
+  // Page 8: application type (ನಿಯತ — regular/permanent)
+  drawTick(pages[7], 170, 253)
+  // Page 8: permanent address same as site address (ಮೇಲೆ ತಿಳಿಸಿರುವಂತೆ)
+  drawTick(pages[7], 50, 588)
+  // Page 8: LT category (ಎಲ್.ಟಿ-2 ಗೃಹಬಳಕೆ / ಎಲ್.ಟಿ-3 ವಾಣಿಜ್ಯ / ಎಲ್.ಟಿ-4 ಕೃಷಿ / ಎಲ್.ಟಿ-5 ಕೈಗಾರಿಕೆ)
+  if (v.propertyType === 'Commercial') drawTick(pages[7], 38, 187)
+  else if (v.propertyType === 'Industrial') drawTick(pages[7], 38, 214)
+  else if (v.propertyType === 'Agricultural') drawTick(pages[7], 38, 200)
+  else drawTick(pages[7], 38, 174)
 }
 
 function drawOverlay(page: PDFPage, fonts: Fonts, overlay: Overlay) {
@@ -198,22 +199,61 @@ function drawMixed(page: PDFPage, fonts: Fonts, text: string, x: number, y: numb
   }
 }
 
+const KANNADA_CHAR_RE = /[ಀ-೿]/
+const LATIN_LETTER_RE = /[A-Za-z]/
+
+// Letters decide the script; a "neutral" character (space, digit, punctuation) has no
+// script of its own, so it joins whichever run it sits inside — e.g. the space and
+// comma in "ಹೊಸದುರ್ಗ (ಗ್ರಾಮ)," stay part of the Kannada run, while "/" in "S/o" stays
+// Latin. Treating every neutral character as Latin (or as Kannada) on its own breaks a
+// single Kannada phrase into many tiny draw calls, and since pdf-lib's width
+// measurement for this Kannada font doesn't perfectly match what it renders, each extra
+// seam between fragments accumulates a small positioning error — enough to visibly
+// misalign or overlap a long phrase.
 function splitScript(text: string): Array<{ text: string; kannada: boolean }> {
   const segments: Array<{ text: string; kannada: boolean }> = []
-  for (const char of text) {
-    const kannada = !/[A-Za-z]/.test(char)
+  let pendingNeutral = ''
+
+  const append = (chunk: string, kannada: boolean) => {
+    if (!chunk) return
     const last = segments[segments.length - 1]
-    if (last && last.kannada === kannada) last.text += char
-    else segments.push({ text: char, kannada })
+    if (last && last.kannada === kannada) last.text += chunk
+    else segments.push({ text: chunk, kannada })
   }
+
+  for (const char of text) {
+    if (LATIN_LETTER_RE.test(char)) {
+      append(pendingNeutral, false)
+      pendingNeutral = ''
+      append(char, false)
+    } else if (KANNADA_CHAR_RE.test(char)) {
+      append(pendingNeutral, true)
+      pendingNeutral = ''
+      append(char, true)
+    } else {
+      pendingNeutral += char
+    }
+  }
+  if (pendingNeutral) {
+    const last = segments[segments.length - 1]
+    append(pendingNeutral, last ? last.kannada : true)
+  }
+
   return segments
 }
+
+// pdf-lib's widthOfTextAtSize() under-measures this Kannada font relative to what actually
+// renders — likely because the width call doesn't fully account for the font's conjunct/matra
+// shaping the way drawText's glyph layout does. This safety factor keeps line-wrap decisions
+// from under-wrapping and spilling text past its column.
+const KANNADA_WIDTH_SAFETY_FACTOR = 1.3
 
 function wrapText(text: string, fonts: Fonts, size: number, maxWidth: number) {
   const widthOf = (value: string) =>
     splitScript(value).reduce((sum, segment) => {
       const font = segment.kannada ? fonts.kannada : fonts.latin
-      return sum + font.widthOfTextAtSize(segment.text, size)
+      const raw = font.widthOfTextAtSize(segment.text, size)
+      return sum + (segment.kannada ? raw * KANNADA_WIDTH_SAFETY_FACTOR : raw)
     }, 0)
 
   const words = text.split(/\s+/).filter(Boolean)

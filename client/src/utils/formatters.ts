@@ -6,6 +6,20 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
+// Compact Indian-numbering form for chart labels where full currency formatting is too wide.
+export function formatCompactCurrency(amount: number): string {
+  const abs = Math.abs(amount)
+  const sign = amount < 0 ? '-' : ''
+  if (abs >= 1_00_00_000) return `${sign}₹${trimDecimal(abs / 1_00_00_000)}Cr`
+  if (abs >= 1_00_000) return `${sign}₹${trimDecimal(abs / 1_00_000)}L`
+  if (abs >= 1_000) return `${sign}₹${trimDecimal(abs / 1_000)}K`
+  return `${sign}₹${abs}`
+}
+
+function trimDecimal(value: number): string {
+  return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)
+}
+
 export function formatDate(date: string): string {
   return new Date(date).toLocaleDateString('en-IN', {
     day: '2-digit',
