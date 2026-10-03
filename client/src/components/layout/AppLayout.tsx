@@ -84,7 +84,7 @@ export function MobileNav() {
     { path: '/projects', icon: FolderKanban, label: 'Work' },
     { path: '/customers', icon: Users, label: 'Customers' },
     { path: '/payments', icon: CreditCard, label: 'Pay' },
-    { path: '/reports', icon: BarChart3, label: 'Reports' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ]
 
   return (
@@ -165,6 +165,7 @@ export function Header({
           <Link
             to="/search"
             className="shrink-0 p-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 transition-colors min-h-11 min-w-11 flex items-center justify-center"
+            aria-label="Search customers, projects, and properties"
           >
             <Search className="w-5 h-5 text-slate-600" />
           </Link>
