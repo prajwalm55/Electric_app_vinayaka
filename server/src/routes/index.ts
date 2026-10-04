@@ -12,6 +12,7 @@ import * as documentService from '../services/document.service.js'
 import * as lightingFormService from '../services/lightingForm.service.js'
 import * as searchService from '../services/search.service.js'
 import * as reportService from '../services/report.service.js'
+import { uploadRouter } from './upload.routes.js'
 
 export const router = Router()
 
@@ -27,6 +28,9 @@ router.post(
 )
 
 router.use(requireAuth)
+
+// Upload routes
+router.use('/upload', uploadRouter)
 
 router.get(
   '/auth/me',
