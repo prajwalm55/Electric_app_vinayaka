@@ -49,6 +49,44 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  upload: async (
+    file: File,
+    folder: 'customers' | 'properties' | 'projects',
+    entityId: string,
+    fileType: string,
+  ): Promise<{
+    fileUrl: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    s3Key: string
+  }> => {
+    const token = getToken()
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+    formData.append('entityId', entityId)
+    formData.append('fileType', fileType)
+
+    const headers = new Headers()
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+
+    const response = await fetch('/api/upload/single', {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new ApiError(response.status, payload.error || 'Upload failed')
+    }
+    return payload
+  },
+  getDownloadUrl: async (s3Key: string): Promise<string> => {
+    const res = await api.get<{ url: string }>(`/upload/download-url?s3Key=${encodeURIComponent(s3Key)}`)
+    return res.url
+  },
   download: async (path: string, filename: string) => {
     const token = getToken()
     const headers = new Headers()

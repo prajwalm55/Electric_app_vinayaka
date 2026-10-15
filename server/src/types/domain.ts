@@ -188,6 +188,10 @@ export interface DocumentRecord {
   customerId?: string
   propertyId?: string
   projectId?: string
+  s3Key?: string
+  fileUrl?: string
+  fileSize?: number
+  mimeType?: string
 }
 
 export interface Payment {
@@ -208,6 +212,10 @@ export interface ProjectPhoto {
   fileName: string
   caption: string
   uploadDate: string
+  s3Key?: string
+  fileUrl?: string
+  fileSize?: number
+  mimeType?: string
 }
 
 export interface ActivityEntry {

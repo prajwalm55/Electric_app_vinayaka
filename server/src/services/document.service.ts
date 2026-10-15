@@ -27,12 +27,20 @@ const documentSchema = z.object({
   customerId: z.string().optional(),
   propertyId: z.string().optional(),
   projectId: z.string().optional(),
+  s3Key: z.string().optional(),
+  fileUrl: z.string().optional(),
+  fileSize: z.number().optional(),
+  mimeType: z.string().optional(),
 })
 
 const photoSchema = z.object({
   projectId: z.string().min(1),
   fileName: z.string().min(1),
   caption: z.string().optional().default(''),
+  s3Key: z.string().optional(),
+  fileUrl: z.string().optional(),
+  fileSize: z.number().optional(),
+  mimeType: z.string().optional(),
 })
 
 export async function createDocument(body: unknown) {

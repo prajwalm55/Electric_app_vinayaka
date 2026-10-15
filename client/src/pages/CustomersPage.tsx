@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Users, Plus, Search, Phone, MapPin, ChevronDown, ChevronUp, Pencil, Eye, Trash2, FileDown } from 'lucide-react'
+import { Users, Plus, Search, Phone, MapPin, ChevronDown, ChevronUp, Pencil, Eye, Trash2, FileDown, ExternalLink, FileText, CheckCircle2, UploadCloud } from 'lucide-react'
 import { Header } from '../components/layout/AppLayout'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -324,8 +324,8 @@ export function CustomerFormPage() {
     aadhaar: '',
     pan: '',
   })
-  const [aadhaarFile, setAadhaarFile] = useState('')
-  const [panFile, setPanFile] = useState('')
+  const [aadhaarFileObj, setAadhaarFileObj] = useState<File | null>(null)
+  const [panFileObj, setPanFileObj] = useState<File | null>(null)
   const [contacts, setContacts] = useState<
     { name: string; relationship: string; mobile: string; whatsapp: string; notes: string }[]
   >([])
@@ -428,22 +428,52 @@ export function CustomerFormPage() {
         longitude: property.longitude ? Number(property.longitude) : undefined,
       })
 
-      if (aadhaarFile) {
-        await addDocument({
-          type: 'Aadhaar',
-          fileName: aadhaarFile,
-          description: 'Customer Aadhaar',
-          customerId: customer.id,
-        })
+      if (aadhaarFileObj) {
+        try {
+          const uploadRes = await api.upload(aadhaarFileObj, 'customers', customer.id, 'aadhaar')
+          await addDocument({
+            type: 'Aadhaar',
+            fileName: aadhaarFileObj.name,
+            description: 'Customer Aadhaar',
+            customerId: customer.id,
+            s3Key: uploadRes.s3Key,
+            fileUrl: uploadRes.fileUrl,
+            fileSize: uploadRes.fileSize,
+            mimeType: uploadRes.mimeType,
+          })
+        } catch (uploadErr) {
+          console.error('Failed to upload Aadhaar to S3:', uploadErr)
+          await addDocument({
+            type: 'Aadhaar',
+            fileName: aadhaarFileObj.name,
+            description: 'Customer Aadhaar',
+            customerId: customer.id,
+          })
+        }
       }
 
-      if (panFile) {
-        await addDocument({
-          type: 'PAN',
-          fileName: panFile,
-          description: 'Customer PAN card',
-          customerId: customer.id,
-        })
+      if (panFileObj) {
+        try {
+          const uploadRes = await api.upload(panFileObj, 'customers', customer.id, 'pan')
+          await addDocument({
+            type: 'PAN',
+            fileName: panFileObj.name,
+            description: 'Customer PAN card',
+            customerId: customer.id,
+            s3Key: uploadRes.s3Key,
+            fileUrl: uploadRes.fileUrl,
+            fileSize: uploadRes.fileSize,
+            mimeType: uploadRes.mimeType,
+          })
+        } catch (uploadErr) {
+          console.error('Failed to upload PAN to S3:', uploadErr)
+          await addDocument({
+            type: 'PAN',
+            fileName: panFileObj.name,
+            description: 'Customer PAN card',
+            customerId: customer.id,
+          })
+        }
       }
 
       if (property.documentNumber) {
@@ -511,21 +541,33 @@ export function CustomerFormPage() {
         <Card>
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Customer Documents</h3>
           <div className="space-y-4">
-            <Input
-              label="Aadhaar PDF"
-              type="file"
-              accept=".pdf,image/*"
-              onChange={(e) => setAadhaarFile(e.target.files?.[0]?.name || '')}
-            />
-            {aadhaarFile && <p className="text-xs text-slate-500 -mt-2">Selected: {aadhaarFile}</p>}
-            <Input
-              label="PAN Card PDF (Optional)"
-              type="file"
-              accept=".pdf,image/*"
-              onChange={(e) => setPanFile(e.target.files?.[0]?.name || '')}
-            />
-            {panFile && <p className="text-xs text-slate-500 -mt-2">Selected: {panFile}</p>}
-            <p className="text-xs text-slate-400">File metadata is saved now; binary upload storage comes with the next backend phase.</p>
+            <div>
+              <Input
+                label="Aadhaar Document (PDF / Image)"
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setAadhaarFileObj(e.target.files?.[0] || null)}
+              />
+              {aadhaarFileObj && (
+                <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Ready for S3 upload: {aadhaarFileObj.name} ({(aadhaarFileObj.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+            <div>
+              <Input
+                label="PAN Card Document (PDF / Image - Optional)"
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setPanFileObj(e.target.files?.[0] || null)}
+              />
+              {panFileObj && (
+                <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Ready for S3 upload: {panFileObj.name} ({(panFileObj.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+            <p className="text-xs text-slate-500">Documents will be uploaded to secure S3 storage and accessible via signed URLs.</p>
           </div>
         </Card>
 
@@ -738,10 +780,15 @@ export function CustomerFormPage() {
 export function CustomerDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const { customers, properties, projects, documents, payments } = useData()
+  const { customers, properties, projects, documents, payments, addDocument } = useData()
   const [showProfile, setShowProfile] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadDocType, setUploadDocType] = useState<'Aadhaar' | 'PAN' | 'Other'>('Aadhaar')
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const customer = customers.find((c) => c.id === id)
 
   if (!customer) {
@@ -891,17 +938,54 @@ export function CustomerDetailPage() {
               ))}
             </Card>
 
-            {customerDocs.length > 0 && (
-              <Card>
-                <h3 className="text-sm font-semibold text-slate-700 mb-3">Documents</h3>
-                {customerDocs.map((doc) => (
-                  <div key={doc.id} className="py-2 border-b border-slate-100 last:border-0 text-sm">
-                    <p className="font-medium">{doc.type}</p>
-                    <p className="text-xs text-slate-500">{doc.fileName}</p>
-                  </div>
-                ))}
-              </Card>
-            )}
+            <Card>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-700">Documents</h3>
+                  <span className="text-xs text-slate-400">{customerDocs.length} files</span>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => { setShowUploadModal(true); setUploadError(''); setUploadFile(null) }}>
+                  <UploadCloud className="w-4 h-4 mr-1 text-primary-600" /> Upload
+                </Button>
+              </div>
+              {customerDocs.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-4">No documents uploaded yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {customerDocs.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-800 text-xs truncate">{doc.type}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{doc.fileName}</p>
+                        </div>
+                      </div>
+                      {doc.s3Key ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const url = await api.getDownloadUrl(doc.s3Key!)
+                              window.open(url, '_blank')
+                            } catch {
+                              alert('Could not generate download link for this document.')
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors shrink-0"
+                        >
+                          <ExternalLink className="w-3 h-3" /> View / Download
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-slate-400 bg-slate-200/60 px-2 py-0.5 rounded shrink-0">
+                          Metadata only
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
 
             {customerPayments.length > 0 && (
               <Card>
@@ -919,6 +1003,85 @@ export function CustomerDetailPage() {
             )}
           </div>
         )}
+
+        <Modal
+          open={showUploadModal}
+          onClose={() => !uploading && setShowUploadModal(false)}
+          title="Upload Customer Document"
+        >
+          <div className="space-y-4">
+            {uploadError && (
+              <div className="rounded-xl bg-red-50 border border-red-100 px-3 py-2 text-xs text-red-700">
+                {uploadError}
+              </div>
+            )}
+            <Select
+              label="Document Type"
+              value={uploadDocType}
+              onChange={(e) => setUploadDocType(e.target.value as any)}
+              options={[
+                { value: 'Aadhaar', label: 'Aadhaar Card' },
+                { value: 'PAN', label: 'PAN Card' },
+                { value: 'Other', label: 'Other Document' },
+              ]}
+            />
+            <Input
+              label="Select Document File (PDF / Image)"
+              type="file"
+              accept=".pdf,image/*"
+              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+            />
+            {uploadFile && (
+              <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Ready for upload: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(1)} KB)
+              </p>
+            )}
+            <p className="text-xs text-slate-400">
+              The file will be securely uploaded to Garage S3 storage and linked to {customer.name}.
+            </p>
+          </div>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowUploadModal(false)}
+              disabled={uploading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!uploadFile || uploading}
+              onClick={async () => {
+                if (!uploadFile) return
+                setUploading(true)
+                setUploadError('')
+                try {
+                  const fileType = uploadDocType === 'Aadhaar' ? 'aadhaar' : uploadDocType === 'PAN' ? 'pan' : 'other'
+                  const uploadRes = await api.upload(uploadFile, 'customers', customer.id, fileType)
+                  await addDocument({
+                    type: uploadDocType,
+                    fileName: uploadFile.name,
+                    description: `Customer ${uploadDocType}`,
+                    customerId: customer.id,
+                    s3Key: uploadRes.s3Key,
+                    fileUrl: uploadRes.fileUrl,
+                    fileSize: uploadRes.fileSize,
+                    mimeType: uploadRes.mimeType,
+                  })
+                  setShowUploadModal(false)
+                  setUploadFile(null)
+                } catch (err) {
+                  setUploadError(err instanceof Error ? err.message : 'Upload failed')
+                } finally {
+                  setUploading(false)
+                }
+              }}
+            >
+              {uploading ? 'Uploading...' : 'Upload to Garage S3'}
+            </Button>
+          </ModalFooter>
+        </Modal>
       </div>
     </div>
   )
@@ -965,8 +1128,8 @@ export function CustomerEditPage() {
   })
   const [contacts, setContacts] = useState<ContactFormRow[]>([])
   const [propertyRows, setPropertyRows] = useState<PropertyFormRow[]>([])
-  const [aadhaarFile, setAadhaarFile] = useState('')
-  const [panFile, setPanFile] = useState('')
+  const [aadhaarFileObj, setAadhaarFileObj] = useState<File | null>(null)
+  const [panFileObj, setPanFileObj] = useState<File | null>(null)
 
   const customerProperties = properties.filter((p) => p.customerId === id)
   const propertyIds = new Set(customerProperties.map((p) => p.id))
@@ -1129,11 +1292,41 @@ export function CustomerEditPage() {
         }
       }
 
-      if (aadhaarFile) {
-        await addDocument({ type: 'Aadhaar', fileName: aadhaarFile, description: 'Customer Aadhaar', customerId: customer.id })
+      if (aadhaarFileObj) {
+        try {
+          const uploadRes = await api.upload(aadhaarFileObj, 'customers', customer.id, 'aadhaar')
+          await addDocument({
+            type: 'Aadhaar',
+            fileName: aadhaarFileObj.name,
+            description: 'Customer Aadhaar',
+            customerId: customer.id,
+            s3Key: uploadRes.s3Key,
+            fileUrl: uploadRes.fileUrl,
+            fileSize: uploadRes.fileSize,
+            mimeType: uploadRes.mimeType,
+          })
+        } catch (uploadErr) {
+          console.error('Failed to upload Aadhaar to S3:', uploadErr)
+          await addDocument({ type: 'Aadhaar', fileName: aadhaarFileObj.name, description: 'Customer Aadhaar', customerId: customer.id })
+        }
       }
-      if (panFile) {
-        await addDocument({ type: 'PAN', fileName: panFile, description: 'Customer PAN card', customerId: customer.id })
+      if (panFileObj) {
+        try {
+          const uploadRes = await api.upload(panFileObj, 'customers', customer.id, 'pan')
+          await addDocument({
+            type: 'PAN',
+            fileName: panFileObj.name,
+            description: 'Customer PAN card',
+            customerId: customer.id,
+            s3Key: uploadRes.s3Key,
+            fileUrl: uploadRes.fileUrl,
+            fileSize: uploadRes.fileSize,
+            mimeType: uploadRes.mimeType,
+          })
+        } catch (uploadErr) {
+          console.error('Failed to upload PAN to S3:', uploadErr)
+          await addDocument({ type: 'PAN', fileName: panFileObj.name, description: 'Customer PAN card', customerId: customer.id })
+        }
       }
 
       navigate(`/customers/${customer.id}`)
@@ -1259,8 +1452,32 @@ export function CustomerEditPage() {
             </div>
           )}
           <div className="space-y-4">
-            <Input label="Aadhaar PDF" type="file" accept=".pdf,image/*" onChange={(e) => setAadhaarFile(e.target.files?.[0]?.name || '')} />
-            <Input label="PAN Card PDF" type="file" accept=".pdf,image/*" onChange={(e) => setPanFile(e.target.files?.[0]?.name || '')} />
+            <div>
+              <Input
+                label="Upload New Aadhaar (PDF / Image)"
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setAadhaarFileObj(e.target.files?.[0] || null)}
+              />
+              {aadhaarFileObj && (
+                <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Ready for S3 upload: {aadhaarFileObj.name} ({(aadhaarFileObj.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+            <div>
+              <Input
+                label="Upload New PAN Card (PDF / Image)"
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setPanFileObj(e.target.files?.[0] || null)}
+              />
+              {panFileObj && (
+                <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Ready for S3 upload: {panFileObj.name} ({(panFileObj.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
           </div>
         </Card>
 
