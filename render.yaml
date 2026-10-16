@@ -18,6 +18,9 @@ services:
         value: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      # TEMPORARY DEMO ONLY: change to false before production.
+      - key: DEMO_MODE
+        value: true
       - key: JWT_SECRET
         sync: false
       - key: DATABASE_URL
@@ -45,3 +48,6 @@ services:
     envVars:
       - key: VITE_API_URL
         sync: false
+      # TEMPORARY DEMO ONLY: change to false before production.
+      - key: VITE_DEMO_MODE
+        value: true

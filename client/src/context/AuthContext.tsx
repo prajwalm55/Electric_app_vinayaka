@@ -28,6 +28,7 @@ const fallbackProfile: UserProfile = {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
@@ -35,6 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(fallbackProfile)
 
   useEffect(() => {
+    if (demoMode) {
+      setIsAuthenticated(true)
+      setReady(true)
+      return
+    }
+
     const token = getToken()
     if (!token) {
       setReady(true)
@@ -54,6 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (password: string) => {
+    if (demoMode) {
+      setIsAuthenticated(true)
+      return true
+    }
+
     try {
       const data = await api.post<{ token: string; profile: UserProfile }>('/auth/login', { password })
       setToken(data.token)
@@ -66,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    if (demoMode) return
     clearToken()
     setIsAuthenticated(false)
   }, [])

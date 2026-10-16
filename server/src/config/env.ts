@@ -11,6 +11,8 @@ export const env = {
   port: Number(process.env.PORT) || 4000,
   jwtSecret: process.env.JWT_SECRET || 'dev-only-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  // Temporary demo switch. Keep false for any real/client production deployment.
+  demoMode: process.env.DEMO_MODE === 'true',
   storageDriver: (process.env.STORAGE_DRIVER || 'json') as 'json' | 'postgres',
   databaseUrl: process.env.DATABASE_URL || '',
   databaseSsl: process.env.DATABASE_SSL !== 'false',
