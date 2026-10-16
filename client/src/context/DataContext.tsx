@@ -67,7 +67,7 @@ const DataContext = createContext<DataContextType | null>(null)
 export function DataProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth()
   const [data, setData] = useState<AppData>(emptyData)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     const snapshot = await api.get<AppData>('/data')
@@ -77,10 +77,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated) {
       setData(emptyData)
+      setLoading(false)
       return
     }
     setLoading(true)
-    refresh().finally(() => setLoading(false))
+    refresh().catch(() => undefined).finally(() => setLoading(false))
   }, [isAuthenticated, refresh])
 
   const addCustomer = useCallback(

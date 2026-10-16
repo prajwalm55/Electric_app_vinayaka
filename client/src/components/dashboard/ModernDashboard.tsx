@@ -5,10 +5,20 @@ import { DonutChart } from './DonutChart'
 import { BarChart } from './BarChart'
 import { getProjectPaymentBalance, sumPayments } from '../../utils/payments'
 import { formatCurrency } from '../../utils/formatters'
+import { LoadingState } from '../ui/LoadingState'
 
 export function ModernDashboard() {
   const navigate = useNavigate()
-  const { projects, payments, customers } = useData()
+  const { projects, payments, customers, loading } = useData()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Header title="Dashboard" subtitle="Overview of all metrics" />
+        <div className="px-4 lg:px-6 py-6"><LoadingState label="Loading dashboard..." /></div>
+      </div>
+    )
+  }
 
   const activeProjects = projects.filter((p) => p.status === 'Active')
   const completedProjects = projects.filter((p) => p.status === 'Completed')

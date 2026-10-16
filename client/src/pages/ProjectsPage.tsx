@@ -10,6 +10,7 @@ import { EmptyState, Modal, ModalFooter } from '../components/ui/Modal'
 import { ProjectWorkCard } from '../components/common/ProjectWorkCard'
 import { WorkflowStepper } from '../components/common/WorkflowStepper'
 import { ActivityTimeline } from '../components/common/ActivityTimeline'
+import { LoadingState } from '../components/ui/LoadingState'
 import { PaymentTypeBreakdown, PaymentBalanceSummary } from '../components/common/PaymentTracker'
 import { useData } from '../context/DataContext'
 import { api } from '../api/client'
@@ -19,7 +20,7 @@ import type { ConnectionEntry, DocumentCategory, ProjectStatus, SiteClassificati
 import { WORKFLOW_STAGES } from '../types'
 
 export function ProjectsPage() {
-  const { projects, customers, payments } = useData()
+  const { projects, customers, payments, loading } = useData()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'Active' | 'Completed' | 'Cancelled'>('all')
   const navigate = useNavigate()
@@ -69,7 +70,9 @@ export function ProjectsPage() {
           </Button>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <LoadingState label="Loading projects..." />
+        ) : filtered.length === 0 ? (
           <EmptyState icon={FolderKanban} title="No projects found" description="Start a new meter installation project for a customer" action={<Button onClick={() => navigate('/projects/new')}><Plus className="w-4 h-4" /> New Project</Button>} />
         ) : (
           <div className="space-y-3">

@@ -6,6 +6,7 @@ import { Card, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input, Select, Textarea } from '../components/ui/Input'
 import { Modal, ModalFooter } from '../components/ui/Modal'
+import { LoadingState } from '../components/ui/LoadingState'
 import { PaymentTypeBreakdown, PaymentBalanceSummary } from '../components/common/PaymentTracker'
 import { useData } from '../context/DataContext'
 import { formatCurrency } from '../utils/formatters'
@@ -14,7 +15,7 @@ import type { PaymentCategory, PaymentMode } from '../types'
 
 export function PaymentsPage() {
   const navigate = useNavigate()
-  const { payments, projects, customers, addPayment } = useData()
+  const { payments, projects, customers, addPayment, loading } = useData()
   const [showModal, setShowModal] = useState(false)
   const [customerFilter, setCustomerFilter] = useState('')
   const [form, setForm] = useState({
@@ -90,7 +91,9 @@ export function PaymentsPage() {
           </select>
         </div>
 
-        {filteredSummaries.length === 0 ? (
+        {loading ? (
+          <LoadingState label="Loading payments..." />
+        ) : filteredSummaries.length === 0 ? (
           <Card>
             <div className="text-center py-8">
               <CreditCard className="w-10 h-10 text-slate-300 mx-auto mb-3" />

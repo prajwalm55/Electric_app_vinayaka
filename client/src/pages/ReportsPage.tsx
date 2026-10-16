@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { Header } from '../components/layout/AppLayout'
 import { Card, CardTitle } from '../components/ui/Card'
+import { LoadingState } from '../components/ui/LoadingState'
 import { useData } from '../context/DataContext'
 import { formatCurrency } from '../utils/formatters'
 import { getCustomerPaymentBalance, getProjectPaymentBalance, sumPayments } from '../utils/payments'
@@ -29,7 +30,7 @@ const tabs: { id: ReportTab; label: string; icon: typeof BarChart3 }[] = [
 
 export function ReportsPage() {
   const navigate = useNavigate()
-  const { customers, projects, payments } = useData()
+  const { customers, projects, payments, loading } = useData()
   const [tab, setTab] = useState<ReportTab>('overview')
 
   const stats = useMemo(() => {
@@ -124,6 +125,15 @@ export function ReportsPage() {
       maxVillageCount,
     }
   }, [customers, projects, payments])
+
+  if (loading) {
+    return (
+      <div>
+        <Header title="Reports" subtitle="Quick view of work, money & customers" />
+        <div className="px-4 lg:px-6 py-4"><LoadingState label="Loading reports..." /></div>
+      </div>
+    )
+  }
 
   return (
     <div>

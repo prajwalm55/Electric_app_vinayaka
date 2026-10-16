@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { Input, Select, Textarea } from '../components/ui/Input'
 import { EmptyState, Modal, ModalFooter } from '../components/ui/Modal'
 import { Tooltip } from '../components/ui/Tooltip'
+import { LoadingState } from '../components/ui/LoadingState'
 import { useData } from '../context/DataContext'
 import { api } from '../api/client'
 import { formatCurrency } from '../utils/formatters'
@@ -16,7 +17,7 @@ import { ProjectWorkCard } from '../components/common/ProjectWorkCard'
 import type { ConnectionEntry, Contact, Customer, PropertyDocumentType, PropertyType, SiteClassification } from '../types'
 
 export function CustomersPage() {
-  const { customers, properties, projects, payments, deleteCustomer } = useData()
+  const { customers, properties, projects, payments, deleteCustomer, loading } = useData()
   const [search, setSearch] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null)
   const [deleteConfirmName, setDeleteConfirmName] = useState('')
@@ -92,7 +93,9 @@ export function CustomersPage() {
           </Button>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <LoadingState label="Loading customers..." />
+        ) : filtered.length === 0 ? (
           <EmptyState
             icon={Users}
             title="No customers found"
