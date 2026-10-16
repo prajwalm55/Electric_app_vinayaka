@@ -9,13 +9,13 @@ import { LoadingState } from '../ui/LoadingState'
 
 export function ModernDashboard() {
   const navigate = useNavigate()
-  const { projects, payments, customers, loading } = useData()
+  const { projects, payments, customers, loading, error, retry } = useData()
 
-  if (loading) {
+  if (loading || error) {
     return (
       <div className="min-h-screen bg-slate-50">
         <Header title="Dashboard" subtitle="Overview of all metrics" />
-        <div className="px-4 lg:px-6 py-6"><LoadingState label="Loading dashboard..." /></div>
+        <div className="px-4 lg:px-6 py-6"><LoadingState label="Loading dashboard..." error={error} onRetry={retry} /></div>
       </div>
     )
   }

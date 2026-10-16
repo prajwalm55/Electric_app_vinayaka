@@ -20,7 +20,7 @@ import type { ConnectionEntry, DocumentCategory, ProjectStatus, SiteClassificati
 import { WORKFLOW_STAGES } from '../types'
 
 export function ProjectsPage() {
-  const { projects, customers, payments, loading } = useData()
+  const { projects, customers, payments, loading, error, retry } = useData()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'Active' | 'Completed' | 'Cancelled'>('all')
   const navigate = useNavigate()
@@ -72,6 +72,8 @@ export function ProjectsPage() {
 
         {loading ? (
           <LoadingState label="Loading projects..." />
+        ) : error ? (
+          <LoadingState error={error} onRetry={retry} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={FolderKanban} title="No projects found" description="Start a new meter installation project for a customer" action={<Button onClick={() => navigate('/projects/new')}><Plus className="w-4 h-4" /> New Project</Button>} />
         ) : (

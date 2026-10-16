@@ -17,7 +17,7 @@ import { ProjectWorkCard } from '../components/common/ProjectWorkCard'
 import type { ConnectionEntry, Contact, Customer, PropertyDocumentType, PropertyType, SiteClassification } from '../types'
 
 export function CustomersPage() {
-  const { customers, properties, projects, payments, deleteCustomer, loading } = useData()
+  const { customers, properties, projects, payments, deleteCustomer, loading, error, retry } = useData()
   const [search, setSearch] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null)
   const [deleteConfirmName, setDeleteConfirmName] = useState('')
@@ -95,6 +95,8 @@ export function CustomersPage() {
 
         {loading ? (
           <LoadingState label="Loading customers..." />
+        ) : error ? (
+          <LoadingState error={error} onRetry={retry} />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Users}

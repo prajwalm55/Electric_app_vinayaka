@@ -15,7 +15,7 @@ import type { PaymentCategory, PaymentMode } from '../types'
 
 export function PaymentsPage() {
   const navigate = useNavigate()
-  const { payments, projects, customers, addPayment, loading } = useData()
+  const { payments, projects, customers, addPayment, loading, error, retry } = useData()
   const [showModal, setShowModal] = useState(false)
   const [customerFilter, setCustomerFilter] = useState('')
   const [form, setForm] = useState({
@@ -93,6 +93,8 @@ export function PaymentsPage() {
 
         {loading ? (
           <LoadingState label="Loading payments..." />
+        ) : error ? (
+          <LoadingState error={error} onRetry={retry} />
         ) : filteredSummaries.length === 0 ? (
           <Card>
             <div className="text-center py-8">

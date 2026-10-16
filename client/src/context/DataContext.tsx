@@ -16,7 +16,9 @@ import { useAuth } from './AuthContext'
 
 interface DataContextType extends AppData {
   loading: boolean
+  error: string | null
   refresh: () => Promise<void>
+  retry: () => Promise<void>
   addCustomer: (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'contacts' | 'notes'>) => Promise<Customer>
   updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>
   deleteCustomer: (id: string) => Promise<void>
@@ -68,20 +70,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth()
   const [data, setData] = useState<AppData>(emptyData)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     const snapshot = await api.get<AppData>('/data')
     setData(snapshot)
+    setError(null)
   }, [])
+
+  const retry = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await refresh()
+    } catch {
+      setError('The server may be waking up. Check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [refresh])
 
   useEffect(() => {
     if (!isAuthenticated) {
       setData(emptyData)
+      setError(null)
       setLoading(false)
       return
     }
     setLoading(true)
-    refresh().catch(() => undefined).finally(() => setLoading(false))
+    setError(null)
+    refresh()
+      .catch(() => setError('The server may be waking up. Check your connection and try again.'))
+      .finally(() => setLoading(false))
   }, [isAuthenticated, refresh])
 
   const addCustomer = useCallback(
@@ -265,7 +285,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       value={{
         ...data,
         loading,
+        error,
         refresh,
+        retry,
         addCustomer,
         updateCustomer,
         deleteCustomer,

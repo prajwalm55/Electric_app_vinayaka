@@ -30,7 +30,7 @@ const tabs: { id: ReportTab; label: string; icon: typeof BarChart3 }[] = [
 
 export function ReportsPage() {
   const navigate = useNavigate()
-  const { customers, projects, payments, loading } = useData()
+  const { customers, projects, payments, loading, error, retry } = useData()
   const [tab, setTab] = useState<ReportTab>('overview')
 
   const stats = useMemo(() => {
@@ -126,11 +126,11 @@ export function ReportsPage() {
     }
   }, [customers, projects, payments])
 
-  if (loading) {
+  if (loading || error) {
     return (
       <div>
         <Header title="Reports" subtitle="Quick view of work, money & customers" />
-        <div className="px-4 lg:px-6 py-4"><LoadingState label="Loading reports..." /></div>
+        <div className="px-4 lg:px-6 py-4"><LoadingState label="Loading reports..." error={error} onRetry={retry} /></div>
       </div>
     )
   }
