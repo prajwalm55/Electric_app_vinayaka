@@ -104,9 +104,9 @@ export function PaymentsPage() {
           filteredSummaries.map((summary) => (
             <Card key={summary.customer.id}>
               <div className="flex items-start justify-between gap-3 mb-4">
-                <div>
-                  <CardTitle>{summary.customer.name}</CardTitle>
-                  <p className="text-xs text-slate-500 mt-0.5">{summary.customer.mobile} · {summary.customer.village}</p>
+                <div className="min-w-0">
+                  <CardTitle className="truncate">{summary.customer.name}</CardTitle>
+                  <p className="text-xs text-slate-500 mt-0.5 break-words">{summary.customer.mobile} · {summary.customer.village}</p>
                 </div>
                 <p className="text-xs text-slate-500 shrink-0">{summary.paymentCount} payment(s)</p>
               </div>
@@ -137,8 +137,8 @@ export function PaymentsPage() {
                             {projectPayments.map((payment) => (
                               <div key={payment.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                                 <div className="min-w-0">
-                                  <p className="text-sm font-medium text-slate-900">{payment.type}</p>
-                                  <p className="text-xs text-slate-500">{payment.date} · {payment.mode}</p>
+                                  <p className="text-sm font-medium text-slate-900 break-words">{payment.type}</p>
+                                  <p className="text-xs text-slate-500 break-words">{payment.date} · {payment.mode}</p>
                                   {payment.referenceNumber && (
                                     <p className="text-[10px] text-slate-400">Ref: {payment.referenceNumber}</p>
                                   )}

@@ -106,7 +106,44 @@ export function CustomersPage() {
             }
           />
         ) : (
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <>
+          <div className="md:hidden space-y-3">
+            {filtered.map((customer) => {
+              const propCount = properties.filter((p) => p.customerId === customer.id).length
+              const projCount = projects.filter((p) => p.customerId === customer.id).length
+              const customerBalance = getCustomerPaymentBalance(projects, payments, customer.id)
+
+              return (
+                <article key={customer.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <button type="button" onClick={() => navigate(`/customers/${customer.id}`)} className="block max-w-full text-left font-semibold text-slate-900 truncate hover:text-primary-700">
+                        {customer.name}
+                      </button>
+                      <p className="mt-0.5 text-xs text-slate-500 truncate">{customer.fatherSpouseName}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button type="button" onClick={() => navigate(`/customers/${customer.id}`)} className="p-2 rounded-lg text-primary-600 bg-primary-50 hover:bg-primary-100" aria-label="View customer"><Eye className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => navigate(`/customers/${customer.id}/edit`)} className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100" aria-label="Edit customer"><Pencil className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => openDeleteModal(customer)} className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100" aria-label="Delete customer"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                    <div className="min-w-0"><dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Mobile</dt><dd className="mt-0.5 truncate text-slate-700 tabular-nums">{customer.mobile}</dd></div>
+                    <div className="min-w-0"><dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Village</dt><dd className="mt-0.5 truncate text-slate-700">{customer.village}</dd></div>
+                    <div><dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Properties</dt><dd className="mt-0.5 font-medium text-slate-700 tabular-nums">{propCount}</dd></div>
+                    <div><dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Projects</dt><dd className="mt-0.5 font-medium text-slate-700 tabular-nums">{projCount}</dd></div>
+                    <div className="col-span-2 border-t border-slate-100 pt-3"><dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Payment</dt><dd className="mt-0.5 font-medium text-slate-800 tabular-nums">
+                      {customerBalance.hasTarget ? <><span className="text-green-700">{formatCurrency(customerBalance.paid)}</span><span className="mx-1 text-slate-400">/</span><span>{formatCurrency(customerBalance.agreedTotal!)}</span></> : customerBalance.paid > 0 ? <span className="text-green-700">{formatCurrency(customerBalance.paid)}</span> : <span className="text-slate-400">—</span>}
+                    </dd></div>
+                  </dl>
+                </article>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] table-fixed border-collapse text-sm">
                 <colgroup>
@@ -225,6 +262,7 @@ export function CustomersPage() {
               </table>
             </div>
           </div>
+          </>
         )}
       </div>
 

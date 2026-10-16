@@ -32,18 +32,18 @@ export function PaymentBalanceSummary({
   return (
     <div className="space-y-2">
       {hasTarget && (
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-lg bg-slate-50 px-2.5 py-2">
+        <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-2">
+          <div className="min-w-0 rounded-lg bg-slate-50 px-2.5 py-2">
             <p className={`${labelClass} text-slate-500`}>Total</p>
-            <p className={`${valueClass} text-slate-900`}>{formatCurrency(agreedTotal!)}</p>
+            <p className={`${valueClass} break-words text-slate-900`}>{formatCurrency(agreedTotal!)}</p>
           </div>
-          <div className="rounded-lg bg-green-50 px-2.5 py-2">
+          <div className="min-w-0 rounded-lg bg-green-50 px-2.5 py-2">
             <p className={`${labelClass} text-green-700`}>Paid</p>
-            <p className={`${valueClass} text-green-800`}>{formatCurrency(paid)}</p>
+            <p className={`${valueClass} break-words text-green-800`}>{formatCurrency(paid)}</p>
           </div>
-          <div className="rounded-lg bg-amber-50 px-2.5 py-2">
+          <div className="min-w-0 rounded-lg bg-amber-50 px-2.5 py-2">
             <p className={`${labelClass} text-amber-700`}>Remaining</p>
-            <p className={`${valueClass} text-amber-800`}>{formatCurrency(remaining)}</p>
+            <p className={`${valueClass} break-words text-amber-800`}>{formatCurrency(remaining)}</p>
           </div>
         </div>
       )}
@@ -174,15 +174,15 @@ export function PaymentTracker({
 
 export function PaymentRow({ payment }: { payment: Payment }) {
   return (
-    <div className="flex items-center justify-between py-1.5 pl-2 border-l-2 border-green-100">
-      <div className="flex items-center gap-2 min-w-0">
+    <div className="flex items-start justify-between gap-3 py-1.5 pl-2 border-l-2 border-green-100">
+      <div className="flex items-start gap-2 min-w-0">
         <CreditCard className="w-3.5 h-3.5 text-green-600 shrink-0" />
         <div className="min-w-0">
           <p className="text-xs font-medium text-slate-800 truncate">{payment.type}</p>
           <p className="text-[10px] text-slate-400">{formatDate(payment.date)} · {payment.mode}</p>
         </div>
       </div>
-      <p className="text-xs font-semibold text-green-700 shrink-0">{formatCurrency(payment.amount)}</p>
+      <p className="text-xs font-semibold text-green-700 shrink-0 whitespace-nowrap">{formatCurrency(payment.amount)}</p>
     </div>
   )
 }
@@ -197,7 +197,7 @@ export function PaymentTypeBreakdown({ payments }: { payments: Payment[] }) {
   if (entries.length === 0) return null
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+    <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
       {entries.map(([type, amount]) => (
         <div key={type} className="rounded-lg bg-green-50 px-3 py-2">
           <p className="text-[10px] text-green-700 font-medium truncate">{type}</p>
