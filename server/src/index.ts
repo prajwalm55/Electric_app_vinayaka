@@ -10,7 +10,7 @@ async function start() {
   await store.init()
 
   const app = createApp()
-  app.listen(env.port, () => {
+  app.listen(env.port, '0.0.0.0', () => {
     console.log(`VEEW OS API listening on http://localhost:${env.port}`)
     console.log(`Storage driver: ${env.storageDriver}`)
   })

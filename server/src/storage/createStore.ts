@@ -1,5 +1,6 @@
 import { env } from '../config/env.js'
 import { JsonStore } from './jsonStore.js'
+import { PostgresStore } from './postgresStore.js'
 import type { Store } from './types.js'
 
 /**
@@ -14,9 +15,7 @@ export function createStore(): Store {
     case 'json':
       return new JsonStore()
     case 'postgres':
-      throw new Error(
-        'Postgres storage is not implemented yet. Keep STORAGE_DRIVER=json until the database layer is added.',
-      )
+      return new PostgresStore()
     default:
       throw new Error(`Unknown STORAGE_DRIVER: ${env.storageDriver}`)
   }

@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'veew_token'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)
@@ -30,7 +31,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
-  const response = await fetch(`/api${path}`, { ...options, headers })
+  const response = await fetch(`${API_BASE_URL}/api${path}`, { ...options, headers })
   if (response.status === 204) return undefined as T
 
   const payload = await response.json().catch(() => ({}))
@@ -71,7 +72,7 @@ export const api = {
     const headers = new Headers()
     if (token) headers.set('Authorization', `Bearer ${token}`)
 
-    const response = await fetch('/api/upload/single', {
+    const response = await fetch(`${API_BASE_URL}/api/upload/single`, {
       method: 'POST',
       headers,
       body: formData,
@@ -92,7 +93,7 @@ export const api = {
     const headers = new Headers()
     if (token) headers.set('Authorization', `Bearer ${token}`)
 
-    const response = await fetch(`/api${path}`, { headers })
+    const response = await fetch(`${API_BASE_URL}/api${path}`, { headers })
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}))
       throw new ApiError(response.status, payload.error || 'Download failed')

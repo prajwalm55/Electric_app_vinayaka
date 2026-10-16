@@ -12,6 +12,8 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET || 'dev-only-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   storageDriver: (process.env.STORAGE_DRIVER || 'json') as 'json' | 'postgres',
+  databaseUrl: process.env.DATABASE_URL || '',
+  databaseSsl: process.env.DATABASE_SSL !== 'false',
   dataDir: path.resolve(serverRoot, process.env.DATA_DIR || './data'),
   uploadDir: path.resolve(serverRoot, process.env.UPLOAD_DIR || './uploads'),
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
